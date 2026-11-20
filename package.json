@@ -10,7 +10,8 @@
     "chain": "npm -w chain run node",
     "backend": "npm -w backend run start:dev",
     "frontend": "npm -w frontend run dev",
-    "dev": "concurrently -k -n chain,backend,frontend -c yellow,cyan,magenta \"npm run chain\" \"wait-on -t 60000 tcp:127.0.0.1:8545 && npm run backend\" \"npm run frontend\""
+    "dev": "concurrently -k -n chain,backend,frontend -c yellow,cyan,magenta \"npm run chain\" \"wait-on -t 60000 tcp:127.0.0.1:8545 && npm run backend\" \"npm run frontend\"",
+    "test": "npm -w backend test && npm -w backend run test:e2e && npm -w frontend test"
   },
   "overrides": {
     "react": "^19.2.3",

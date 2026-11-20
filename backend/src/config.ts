@@ -5,7 +5,7 @@ export const config = {
   rpcUrl: process.env.RPC_URL ?? 'http://127.0.0.1:8545',
   ownerKey: process.env.OWNER_KEY ?? '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
   port: Number(process.env.PORT ?? 3001),
-  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:30141',
   deploymentFile: process.env.DEPLOYMENT_FILE, // default resolved in DeploymentStore
 };
 
