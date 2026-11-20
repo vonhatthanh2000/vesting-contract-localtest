@@ -1,0 +1,23 @@
+{
+  "name": "tonpass-vesting-testbed",
+  "private": true,
+  "workspaces": [
+    "chain",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "chain": "npm -w chain run node",
+    "backend": "npm -w backend run start:dev",
+    "frontend": "npm -w frontend run dev",
+    "dev": "concurrently -k -n chain,backend,frontend -c yellow,cyan,magenta \"npm run chain\" \"wait-on -t 60000 tcp:127.0.0.1:8545 && npm run backend\" \"npm run frontend\""
+  },
+  "overrides": {
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.5",
+    "wait-on": "^8.0.5"
+  }
+}

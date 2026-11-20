@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+chain/cache/
+chain/artifacts/
+backend/deployment.json
+.playwright-mcp/
+plans/*
+tasks/*

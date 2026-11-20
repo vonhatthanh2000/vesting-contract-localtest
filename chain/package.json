@@ -1,0 +1,10 @@
+{
+  "name": "chain",
+  "private": true,
+  "scripts": { "node": "hardhat node" },
+  "devDependencies": {
+    "hardhat": "^2.22.17",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}
