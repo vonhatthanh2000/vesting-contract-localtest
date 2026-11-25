@@ -4,7 +4,11 @@ import 'dotenv/config';
 export const config = {
   rpcUrl: process.env.RPC_URL ?? 'http://127.0.0.1:8545',
   port: Number(process.env.PORT ?? 3001),
-  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:30141',
+  // Comma-separated list of frontend origins allowed by CORS.
+  corsOrigin: (process.env.CORS_ORIGIN ?? 'http://localhost:30141,https://thanh-30141.motcaigido.xyz')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean),
   deploymentFile: process.env.DEPLOYMENT_FILE, // default backend/deployment.json (resolved in VestingService)
 };
 
