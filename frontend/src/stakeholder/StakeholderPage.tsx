@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import type { Address } from 'viem';
 import { useAccount, useConnect, useDisconnect, usePublicClient, useSwitchChain, useWriteContract } from 'wagmi';
-import { claimMessage, describeClaimError } from '../lib/claimErrors';
+import { claimBlocker, claimMessage, describeClaimError } from '../lib/claimErrors';
 import { vestingAbi } from '../lib/contracts';
 import { fmtChainTime, formatToken } from '../lib/format';
 import { hardhatLocal } from '../wagmi';
@@ -47,10 +47,9 @@ export default function StakeholderPage() {
   };
 
   const pct = view && view.allocated > 0n ? Number((view.released * 10000n) / view.allocated) / 100 : 0;
-  const claimHint = !view || !view.exists ? undefined
-    : view.lastClaimedStep >= view.totalSteps ? claimMessage('VestingComplete')
-    : !view.canClaimNow ? claimMessage('StepLocked', view.nextReleaseTime)
-    : undefined;
+  // The vault and token are read live from GET /deployment (the token follows setToken).
+  const paused = state.kind === 'ready' && state.deployment.paused;
+  const claimHint = claimBlocker({ paused, view });
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6 text-slate-800">
@@ -89,6 +88,11 @@ export default function StakeholderPage() {
 
       {state.kind === 'notDeployed' && <p className="text-amber-700">The vault isn't deployed yet. Ask the admin to run Setup on <Link className="underline" to="/admin">/admin</Link>.</p>}
       {state.kind === 'error' && <p className="text-red-600">{state.message}</p>}
+      {paused && (
+        <p role="status" className={`${box} border-red-300 bg-red-50 text-red-800`}>
+          Vault is paused: claims are blocked until the admin unpauses it.
+        </p>
+      )}
 
       {isConnected && !wrongNetwork && view && !view.exists && <p className={box}>{claimMessage('NotStakeholder')}.</p>}
 
@@ -106,10 +110,10 @@ export default function StakeholderPage() {
               <dt>Token balance</dt><dd className="font-mono">{formatToken(view.balance)}</dd>
             </dl>
             <div className="flex flex-wrap items-center gap-2 pt-2">
-              <button className={btn} disabled={!!sending || !view.canClaimNow} onClick={() => send('claim')}>
+              <button className={btn} disabled={!!sending || paused || !view.canClaimNow} onClick={() => send('claim')}>
                 {sending === 'claim' ? 'Claiming…' : 'Claim (next step)'}
               </button>
-              <button className={btn} disabled={!!sending || view.claimable === 0n} onClick={() => send('claimAll')}>
+              <button className={btn} disabled={!!sending || paused || view.claimable === 0n} onClick={() => send('claimAll')}>
                 {sending === 'claimAll' ? 'Claiming…' : 'Claim all'}
               </button>
               {claimHint && <span className="text-slate-600">{claimHint}</span>}

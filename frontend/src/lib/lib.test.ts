@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from './api';
-import { describeError } from './errors';
+import { describeError, HINTS } from './errors';
 import { isUnderfunded, toUnits } from './format';
 import { validateAddForm } from './validation';
 
@@ -36,6 +36,20 @@ describe('underfunding', () => {
     expect(isUnderfunded({ vaultBalance: '1199.999999999999999999', remaining: '1200.0' })).toBe(true);
     expect(isUnderfunded({ vaultBalance: '1200.0', remaining: '1200.0' })).toBe(false);
     expect(isUnderfunded({ vaultBalance: '0.0', remaining: '0.0' })).toBe(false);
+  });
+});
+
+describe('error hints (PLAN 04 H3)', () => {
+  it.each([
+    'StepLocked', 'VestingComplete', 'NothingClaimable', 'NotStakeholder', 'InsufficientVaultBalance', 'RenounceDisabled',
+    'EnforcedPause', 'ExpectedPause', 'OwnableUnauthorizedAccount', 'ERC20InsufficientBalance', 'NoNextUnlock', 'TimeInPast',
+    'ScenarioBusy', 'NoCode', 'InvalidSchedule', 'AllocationMismatch', 'ZeroAddress', 'ZeroAmount', 'ActivePlans', 'NotDeployed',
+  ])('%s has a hint', (name) => {
+    expect(HINTS[name]).toBeTruthy();
+    expect(describeError(new ApiError(name, 400))).toBe(`${name}: ${HINTS[name]}`);
+  });
+  it('an unknown name is shown bare', () => {
+    expect(describeError(new ApiError('SomethingNew', 400))).toBe('SomethingNew');
   });
 });
 

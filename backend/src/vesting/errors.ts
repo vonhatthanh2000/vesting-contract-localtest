@@ -2,6 +2,9 @@ import { HttpException } from '@nestjs/common';
 import { Interface } from 'ethers';
 
 export const notDeployed = () => new HttpException({ error: 'NotDeployed' }, 409);
+export const noCode = () => new HttpException({ error: 'NoCode' }, 400);
+export const noNextUnlock = () => new HttpException({ error: 'NoNextUnlock' }, 400);
+export const timeInPast = () => new HttpException({ error: 'TimeInPast' }, 400);
 export const badRequest = (message: string) => new HttpException({ error: 'BadRequest', message }, 400);
 
 /** Map a contract revert to 400 { error: <CustomErrorName> }; rethrow anything else unchanged. */

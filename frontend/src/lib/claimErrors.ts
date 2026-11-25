@@ -15,9 +15,27 @@ export function claimMessage(errorName: string, nextReleaseTime?: number): strin
       return 'This wallet has no vesting plan';
     case 'ERC20InsufficientBalance':
       return 'Vault is underfunded; ask the admin to top up';
+    case 'EnforcedPause':
+      return 'Vault is paused';
     default:
       return errorName;
   }
+}
+
+/**
+ * Why the MetaMask page's claim buttons are off, or undefined if they're on. A paused vault blocks both buttons,
+ * whatever the schedule says (claim/claimAll are whenNotPaused).
+ */
+export function claimBlocker(p: {
+  paused: boolean;
+  view?: { exists: boolean; lastClaimedStep: number; totalSteps: number; canClaimNow: boolean; nextReleaseTime: number };
+}): string | undefined {
+  if (p.paused) return claimMessage('EnforcedPause');
+  const v = p.view;
+  if (!v || !v.exists) return undefined;
+  if (v.lastClaimedStep >= v.totalSteps) return claimMessage('VestingComplete');
+  if (!v.canClaimNow) return claimMessage('StepLocked', v.nextReleaseTime);
+  return undefined;
 }
 
 /** Find a revert's custom error name in a viem/wallet error: viem's decoded name, else decodeErrorResult on raw data. */

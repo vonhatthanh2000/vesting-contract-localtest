@@ -25,3 +25,8 @@ export function buildSteps(p: {
   }));
   return { total, steps };
 }
+
+/** A custom schedule as sent by the client (human amounts) → contract Step[]; order and values kept exactly as sent. */
+export function scheduleToSteps(schedule: { unlockTime: number; amount: string }[]): Step[] {
+  return schedule.map((s) => ({ unlockTime: BigInt(s.unlockTime), amount: parseUnits(s.amount, DECIMALS) }));
+}

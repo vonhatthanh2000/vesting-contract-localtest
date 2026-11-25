@@ -22,3 +22,8 @@ export function formatToken(v: bigint, decimals = 18): string {
   const frac = (a % base).toString().padStart(decimals, '0').replace(/0+$/, '') || '0';
   return `${neg ? '-' : ''}${a / base}.${frac}`;
 }
+
+/** What removeStakeholder (or a replace) forfeits for a row: allocated − released, as "1100.0". */
+export function forfeitedOf(r: { allocated: string; released: string }): string {
+  return formatToken(toUnits(r.allocated) - toUnits(r.released));
+}

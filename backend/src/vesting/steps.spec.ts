@@ -1,5 +1,5 @@
 import { formatUnits, parseUnits } from 'ethers';
-import { buildSteps, DAY } from './steps';
+import { buildSteps, DAY, scheduleToSteps } from './steps';
 
 describe('buildSteps', () => {
   it('gives the remainder to the last step so the sum is exact', () => {
@@ -28,5 +28,27 @@ describe('buildSteps', () => {
     const { total, steps } = buildSteps({ chainNow: 0, totalAmount: '0.000000000000000007', steps: 1, intervalDays: 1, firstUnlockInDays: 0 });
     expect(steps).toHaveLength(1);
     expect(steps[0].amount).toBe(total);
+  });
+});
+
+describe('scheduleToSteps', () => {
+  it('parses decimal amounts at 18 decimals and keeps unlock times as bigint', () => {
+    expect(scheduleToSteps([{ unlockTime: 1_700_000_000, amount: '0.5' }])).toEqual([
+      { unlockTime: 1_700_000_000n, amount: parseUnits('0.5', 18) },
+    ]);
+  });
+
+  it('keeps the order and values exactly as sent, even when invalid for the contract', () => {
+    const steps = scheduleToSteps([
+      { unlockTime: 300, amount: '1' },
+      { unlockTime: 100, amount: '0' },
+      { unlockTime: 100, amount: '2.000000000000000001' },
+    ]);
+    expect(steps.map((s) => Number(s.unlockTime))).toEqual([300, 100, 100]);
+    expect(steps.map((s) => formatUnits(s.amount, 18))).toEqual(['1.0', '0.0', '2.000000000000000001']);
+  });
+
+  it('returns an empty array for an empty schedule', () => {
+    expect(scheduleToSteps([])).toEqual([]);
   });
 });
