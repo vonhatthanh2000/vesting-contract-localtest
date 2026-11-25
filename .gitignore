@@ -7,3 +7,4 @@ backend/deployment.json
 .playwright-mcp/
 plans/*
 tasks/*
+shared/artifacts/

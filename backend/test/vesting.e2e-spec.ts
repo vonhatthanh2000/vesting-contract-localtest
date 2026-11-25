@@ -130,8 +130,11 @@ describe('Vesting API (e2e)', () => {
       expect(r.body[0]).toMatchObject({ address: U, allocated: '1200.0', claimable: '200.0' });
     });
 
-    it('adding the same user twice → 400 AlreadyStakeholder', async () => {
-      await http().post('/stakeholders').send(PLAN).expect(400, { error: 'AlreadyStakeholder' });
+    it('adding the same user again replaces the unclaimed plan', async () => {
+      await http().post('/stakeholders').send({ ...PLAN, totalAmount: '600', steps: 6 }).expect(200);
+      const r = await http().get(`/stakeholders/${U}`).expect(200);
+      expect(r.body).toMatchObject({ allocated: '600.0', claimable: '0.0', totalSteps: 6 });
+      await http().get('/dashboard').expect(200, { allocated: '600.0', claimed: '0.0', remaining: '600.0', count: 1, vaultBalance: '1200.0' });
     });
 
     it('POST /time/skip accepts seconds', async () => {

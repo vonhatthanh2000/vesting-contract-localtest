@@ -3,7 +3,7 @@ import { Contract, ContractFactory, JsonRpcProvider, Wallet, formatUnits, getAdd
 import * as fs from 'fs';
 import * as path from 'path';
 import { config } from '../config';
-import { MockUSDTArtifact, MultiVestingArtifact, tokenIface, vestingIface } from './artifacts';
+import { FamilyVestingArtifact, MockUSDTArtifact, tokenIface, vestingIface } from './artifacts';
 import { AddStakeholderDto, SkipTimeDto } from './dto';
 import { badRequest, notDeployed, toHttpError } from './errors';
 import { buildSteps, DAY, DECIMALS } from './steps';
@@ -48,7 +48,7 @@ export class VestingService implements OnModuleInit {
     const d = await this.requireDeployment();
     return {
       d,
-      vault: new Contract(d.vault, MultiVestingArtifact.abi, this.owner),
+      vault: new Contract(d.vault, FamilyVestingArtifact.abi, this.owner),
       token: new Contract(d.token, MockUSDTArtifact.abi, this.owner),
     };
   }
@@ -71,11 +71,10 @@ export class VestingService implements OnModuleInit {
       const token = await new ContractFactory(MockUSDTArtifact.abi, MockUSDTArtifact.bytecode, this.owner).deploy(DECIMALS);
       await token.waitForDeployment();
       const tokenAddr = await token.getAddress();
-      const vault = await new ContractFactory(MultiVestingArtifact.abi, MultiVestingArtifact.bytecode, this.owner).deploy(
-        this.owner.address,
-        tokenAddr,
-      );
+      // FamilyVesting's constructor makes the deployer the owner and sets the BSC mainnet token; point it at the mock.
+      const vault = (await new ContractFactory(FamilyVestingArtifact.abi, FamilyVestingArtifact.bytecode, this.owner).deploy()) as Contract;
       await vault.waitForDeployment();
+      await (await vault.setToken(tokenAddr)).wait();
       this.deployment = { token: tokenAddr, vault: await vault.getAddress(), owner: this.owner.address };
       fs.writeFileSync(this.file, JSON.stringify(this.deployment, null, 2) + '\n');
       return this.deployment;
@@ -102,8 +101,9 @@ export class VestingService implements OnModuleInit {
     return this.run(async () => {
       const { vault } = await this.contracts();
       const { total, steps } = buildSteps({ ...b, chainNow: await this.chainNow() });
-      await vault.addStakeholder.staticCall(b.user, steps, total); // preflight: surfaces the custom error
-      const tx = await vault.addStakeholder(b.user, steps, total);
+      // Creates the plan, or replaces the unclaimed steps if the user already has one.
+      await vault.replaceStakeholder.staticCall(b.user, steps, total); // preflight: surfaces the custom error
+      const tx = await vault.replaceStakeholder(b.user, steps, total);
       await tx.wait();
       return { txHash: tx.hash as string };
     });

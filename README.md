@@ -1,11 +1,12 @@
 # TonPass vesting testbed
 
-Run the MultiVesting flow end to end on a local Hardhat chain in a few minutes. An admin deploys a fake token and the vault, funds it, and adds a stakeholder with monthly steps. Time is skipped forward, and the stakeholder claims from MetaMask.
+Run the FamilyVesting flow end to end on a local Hardhat chain in a few minutes. An admin deploys a fake token and the vault, funds it, and adds a stakeholder with monthly steps. Time is skipped forward, and the stakeholder claims from MetaMask.
 
 Local only. The keys below are Hardhat's public test keys. Never use them on a real network.
 
 | Part | Where | Port |
 |---|---|---|
+| Contracts (`FamilyVesting`, `mocks/MockUSDT`) | `contracts/` | – |
 | Hardhat node (chainId 31337) | `chain/` | 8545 |
 | Backend (NestJS + ethers, signs admin txs with account #0) | `backend/` | 3001 |
 | Frontend (React + wagmi): `/admin` and `/` (stakeholder) | `frontend/` | 30141 |
@@ -22,9 +23,9 @@ npm install
 npm run dev
 ```
 
-`npm run dev` starts the chain, then the backend once the chain answers on 8545, and the frontend. Ctrl+C stops all three. The chain starts empty every time.
+`npm run dev` compiles `contracts/` first, then starts the chain, then the backend once the chain answers on 8545, and the frontend. Ctrl+C stops all three. The chain starts empty every time.
 
-Each part on its own, in three terminals: `npm run chain`, `npm run backend`, `npm run frontend`.
+Each part on its own, in three terminals: `npm run chain`, `npm run backend`, `npm run frontend`. Run `npm run compile` before them.
 
 ## MetaMask setup (once)
 
@@ -45,7 +46,7 @@ The admin (account #0, `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`) lives only 
 
 Open http://localhost:30141/admin:
 
-1. **Setup**: deploys MockUSDT and the vault.
+1. **Setup**: deploys MockUSDT and the vault, then calls `setToken(MockUSDT)` (the constructor sets the BSC mainnet token).
 2. **Fund** 1200.
 3. **Add stakeholder** with the defaults: account #1, 1200 over 12 steps, every 30 days, first unlock in 30 days.
 4. **Skip time**: +30 days, +30 days, +1 day. The row shows claimable 200.0 (2 steps).
@@ -77,7 +78,7 @@ Claiming is done by the stakeholder's wallet (step 5 above), not by the backend.
 | POST | `/setup` | – |
 | GET | `/deployment` | – |
 | POST | `/fund` | `{ amount }` |
-| POST | `/stakeholders` | `{ user, totalAmount, steps, intervalDays, firstUnlockInDays }` |
+| POST | `/stakeholders` | `{ user, totalAmount, steps, intervalDays, firstUnlockInDays }`. Calls `replaceStakeholder`, so posting an existing user replaces their unclaimed steps. |
 | GET | `/stakeholders` | – |
 | GET | `/stakeholders/:addr` | – |
 | GET | `/dashboard` | – |
@@ -92,7 +93,7 @@ Amounts are decimal strings ("1200"). Errors look like `{ "error": "<Name>" }`: 
 npm run test
 ```
 
-This runs the backend unit tests, the backend e2e test and the frontend Vitest tests. The e2e test starts its own Hardhat node on port 8546, so it doesn't need `npm run dev` and doesn't touch your dev chain on 8545.
+This compiles `contracts/`, then runs the backend unit tests, the backend e2e test and the frontend Vitest tests. The e2e test starts its own Hardhat node on port 8546, so it doesn't need `npm run dev` and doesn't touch your dev chain on 8545.
 
 ## Reset
 
@@ -102,12 +103,17 @@ This runs the backend unit tests, the backend e2e test and the frontend Vitest t
    - If you skip this, txs fail with a nonce mismatch ("Nonce too high" / "nonce has already been used").
 3. **Click Setup again** on `/admin`, then Fund and Add stakeholder.
 
-## Updating the contract
+## Working on the contract
 
-1. Recompile in the contract repo: `cd ../tonpass-smartcontract/bsc && npx hardhat compile`.
-2. Copy the new artifacts here: `./scripts/sync-artifacts.sh`.
-3. Restart `npm run dev`, then click Setup. The ABIs are read when the backend and frontend start.
-4. Commit the updated `shared/artifacts/*.json` so the testbed runs without the other repo.
+The sources live in `contracts/`. `npm run compile` runs `hardhat compile` (solc 0.8.28, optimizer 200, evm `paris`, config in `chain/hardhat.config.ts`). It then writes each contract's ABI and bytecode to `shared/artifacts/<ContractName>.json`, which is where the backend and frontend read them. `shared/artifacts/` and `chain/artifacts/` are generated and not committed.
+
+After you edit a contract:
+
+1. Stop `npm run dev` and start it again. It recompiles, and the backend reads the new ABI when it starts.
+2. Click **Setup** on `/admin`, then Fund and Add stakeholder. The old vault holds the old code.
+3. If you changed a function the backend or frontend calls, update `backend/src/vesting/vesting.service.ts` or `frontend/src/stakeholder/`.
+
+A compile error shows up in the terminal, and the chain, backend and frontend don't start.
 
 ## Gotchas
 

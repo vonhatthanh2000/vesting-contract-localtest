@@ -26,7 +26,7 @@ export type AddStakeholderInput = {
   firstUnlockInDays: number;
 };
 
-/** A backend error: `name` is the `{ error }` field (e.g. AlreadyStakeholder, NotDeployed, BadRequest). */
+/** A backend error: `name` is the `{ error }` field (e.g. AllocationMismatch, NotDeployed, BadRequest). */
 export class ApiError extends Error {
   constructor(public readonly name: string, public readonly status: number, public readonly detail?: string) {
     super(detail ? `${name}: ${detail}` : name);

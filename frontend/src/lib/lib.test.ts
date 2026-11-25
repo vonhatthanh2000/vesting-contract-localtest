@@ -41,7 +41,7 @@ describe('underfunding', () => {
 
 describe('describeError', () => {
   it('adds a hint to known error names', () => {
-    expect(describeError(new ApiError('AlreadyStakeholder', 400))).toBe('AlreadyStakeholder: this wallet already has a plan');
+    expect(describeError(new ApiError('AllocationMismatch', 400))).toBe('AllocationMismatch: step amounts do not add up to the total');
   });
   it('uses the backend message for BadRequest', () => {
     expect(describeError(new ApiError('BadRequest', 400, 'steps must not be greater than 100'))).toBe('BadRequest: steps must not be greater than 100');

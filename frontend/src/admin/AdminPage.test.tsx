@@ -31,13 +31,13 @@ afterEach(() => vi.unstubAllGlobals());
 describe('AdminPage', () => {
   it('shows a backend error as a toast with the error name', async () => {
     const fetchMock = mockBackend({
-      'POST /stakeholders': () => new Response(JSON.stringify({ error: 'AlreadyStakeholder' }), { status: 400 }),
+      'POST /stakeholders': () => new Response(JSON.stringify({ error: 'AllocationMismatch' }), { status: 400 }),
     });
     render(<AdminPage />);
     const add = await screen.findByRole('button', { name: 'Add stakeholder' });
     await waitFor(() => expect(add).toBeEnabled());
     await userEvent.click(add);
-    expect(await screen.findByRole('alert')).toHaveTextContent('AlreadyStakeholder: this wallet already has a plan');
+    expect(await screen.findByRole('alert')).toHaveTextContent('AllocationMismatch: step amounts do not add up to the total');
     const post = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST');
     expect(JSON.parse(post![1]!.body as string)).toEqual({
       user: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
